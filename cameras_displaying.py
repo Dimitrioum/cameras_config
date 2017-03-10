@@ -36,9 +36,13 @@ def _get_all_devices():
 
 def _video_stream():
     global cameras
+
+    def _is_opened(video_obj):
+        return video_obj.isOpened()
+
     while True:
         for num in range(len(cameras)):
-            if cameras[num].isOpened():
+            if map(_is_opened, cameras):
                 rets, frames = cameras[num].read()
                 if(rets):
                     cv2.imshow('camera%d' % (num + 1), frames)
@@ -55,21 +59,30 @@ def _stream_initialization(list_of_cameras):
 
 def _user_input():
     global choose_cam, cameras, caps
-    while True: #not len(cameras) == len(caps):
-        choose_cam = int(raw_input('Введите номер камеры: '))
-        cameras.append(caps[choose_cam - 1])
-        if len(cameras) == len(caps):
-            print('Выведены все камеры')
-            thread3 = threading.Thread(target=_user_deletion)
-            thread3.start()
-            thread3.join()
-            break
+    while True:
+        if raw_input() == 'add':
+            choose_cam = int(raw_input('Введите номер камеры: '))
+            if caps[choose_cam - 1] in cameras:
+                print('Камера уже выведена на дисплей!')
+            elif len(cameras) == len(caps):
+                print('Выведены все камеры')
+            else:
+                cameras.append(caps[choose_cam - 1])
+        elif raw_input() == 'del':
+            choose_del = int(raw_input('Введите номер камеры, чтобы удалить её с дисплея: '))
+            cameras.remove(cameras[choose_del - 1])
+            caps[choose_del - 1].release()
+            cv2.destroyWindow('camera%d' % choose_del)
+        elif (raw_input() != 'add') and (raw_input() != 'del'):
+            print('Введите add для добавления камеры, del - для удаления камеры с дисплея')
 
 
-def _user_deletion():
-    global cameras, choose_del
-    choose_del = int(raw_input('Введите номер камеры, чтобы удалить её с дисплея: '))
-    cameras.remove(cameras[choose_del-1])
+
+
+# def _user_deletion():
+#     global cameras, choose_del
+#     choose_del = int(raw_input('Введите номер камеры, чтобы удалить её с дисплея: '))
+#     cameras.remove(cameras[choose_del-1])
 
 
 def _threading_initialization():
@@ -86,7 +99,6 @@ def _threading_initialization():
 
 
 if __name__ == '__main__':
-    # warnings.simplefilter('ignore')
     #check if there is a stationary camera
     check_stat = _check_stat_cam(0)
 
@@ -102,6 +114,26 @@ if __name__ == '__main__':
 
     #init the videostream
     _stream_initialization(cameras_names)
+
+    #thread creating
+    #thread_lock = threading.Lock()
+
     _threading_initialization()
-    
-    
+
+    # thread1 = threading.Thread(target=_video_stream)
+    # thread2 = threading.Thread(target=_user_input)
+    #
+    # thread1.start()
+    # thread2.start()
+    #
+    # thread1.join()
+    # thread2.join()
+
+    # while True:
+    #     if raw_input() == 'next':
+    #         _user_input()
+    #     elif raw_input() == 'del':
+    #         _user_deletion()
+    #     else:
+    #         print('Для добавления камеры введите next')
+
